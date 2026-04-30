@@ -1,118 +1,159 @@
-# Guía de setup — Herramientas externas (Supabase, Firebase/FCM)
+# Guía de setup — Herramientas externas (orden real Fase 1)
 
-Esta guía define **qué se necesita** y **cómo configurar** las dependencias externas para arrancar Fase 1 sin subir secretos al repo.
+> Objetivo: documentar lo que **sí podemos preparar en repo** mientras tú ejecutas configuración en plataformas (Supabase/Firebase).
 
-## 1) Requisitos previos
+## Orden práctico acordado
 
-- Cuenta en GitHub
-- Android Studio (versión estable)
-- Proyecto Android ya compilando localmente
-- Cuenta en Supabase
-- Cuenta en Firebase (Google)
-- (Opcional recomendado) Supabase CLI
-
----
-
-## 2) Supabase — Setup inicial
-
-### 2.1 Crear proyecto
-
-1. Crear proyecto en Supabase.
-2. Guardar:
-   - `SUPABASE_URL`
-   - `SUPABASE_ANON_KEY`
-3. **No** usar `service_role` en Android.
-
-### 2.2 Auth
-
-1. Habilitar Email/Password en Authentication > Providers.
-2. Crear usuarios de prueba (user/notifier/admin).
-
-### 2.3 Esquema base (Fase 1)
-
-Crear tablas en orden:
-
-1. `profiles`
-2. `train_status`
-3. `crossings`
-4. `train_events`
-5. `device_tokens`
-6. (adicional sugerido) `alternate_routes`
-
-### 2.4 RLS y políticas
-
-- Activar RLS en todas las tablas sensibles.
-- Definir políticas por rol (`user`, `notifier`, `admin`).
-- Validar que restricciones funcionen desde backend (no solo UI).
-
-### 2.5 Realtime
-
-- Habilitar Realtime para `train_status`, `crossings`, `train_events`.
+1. Supabase project
+2. SQL de tablas
+3. RLS básico
+4. Usuarios de prueba
+5. Conectar Android con Supabase
+6. Login + roles
+7. Firebase/FCM
+8. Token FCM
+9. Push por evento
 
 ---
 
-## 3) Firebase + FCM — Setup inicial
+## Tarea actual: TQ-F1.0-006 (Supabase)
 
-### 3.1 Crear proyecto Firebase
+### Paso 1 — Crear proyecto Supabase
 
-1. Crear proyecto en Firebase Console.
-2. Agregar app Android con package name exacto del proyecto (`com.tequit`).
-3. Descargar `google-services.json` y colocarlo en `app/google-services.json`.
+- Crear proyecto: `tequitshit-tren`
+- Guardar fuera del repo:
+  - `SUPABASE_URL`
+  - `SUPABASE_ANON_KEY`
+- No usar `service_role` en Android.
 
-### 3.2 Configuración Gradle
+### Paso 2 — Auth por correo
 
-- Agregar plugin de Google Services.
-- Agregar dependencia de Firebase Messaging.
-- Sin llaves privadas en código fuente.
+- Activar `Authentication > Providers > Email`.
+- En desarrollo: `Confirm email = OFF` (temporal).
 
-### 3.3 Permisos y notificaciones Android
+### Paso 3 — SQL base en repo
 
-- Mantener permiso `POST_NOTIFICATIONS` (Android 13+).
-- Solicitar permiso en runtime (ya iniciado en el proyecto).
-- Crear canal de notificación para Android 8+.
+Crear estructura:
 
-### 3.4 Token FCM
+```text
+supabase/
+  migrations/
+    001_initial_schema.sql
+    002_seed_initial_data.sql
+    003_rls_policies.sql
+```
 
-- Obtener token al iniciar sesión.
-- Guardar/actualizar token en `device_tokens`.
-- Implementar refresh de token con `FirebaseMessagingService`.
+> El contenido SQL recomendado ya quedó definido en la conversación y se aplicará exactamente en esos archivos.
+
+### Paso 4 — Ejecutar SQL en Supabase
+
+En `SQL Editor`, ejecutar en este orden:
+
+1. `001_initial_schema.sql`
+2. `002_seed_initial_data.sql`
+3. `003_rls_policies.sql`
+
+Validar tablas en `Table Editor`:
+
+- profiles
+- train_status
+- crossings
+- train_events
+- device_tokens
+- alternate_routes
+
+### Paso 5 — Usuarios de prueba
+
+Crear en `Authentication > Users`:
+
+- `user@test.com`
+- `notifier@test.com`
+- `admin@test.com`
+
+Insertar/actualizar `profiles` con rol correspondiente.
+
+### Paso 6 — Variables locales Android
+
+En `local.properties`:
+
+```properties
+SUPABASE_URL=https://TU-PROYECTO.supabase.co
+SUPABASE_ANON_KEY=TU_ANON_KEY
+```
+
+Asegurar `.gitignore` con:
+
+```gitignore
+local.properties
+app/google-services.json
+```
 
 ---
 
-## 4) Secrets y configuración local
+## Siguiente después de Supabase
 
-Usar variables locales/no versionadas:
+### TQ-F1.2-002
 
-- `local.properties` o `gradle.properties` local
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
+Implementar cliente Supabase en Android (sin `service_role`, con RLS como control principal).
 
-**Nunca** subir:
+### Luego Firebase/FCM
 
-- `service_role`
-- cuentas de servicio Firebase privadas
-- llaves privadas
+Solo después de login+roles:
 
----
-
-## 5) Siguiente paso recomendado (orden práctico)
-
-1. **TQ-F1.0-006**: Crear Supabase + documentar variables locales.
-2. **TQ-F1.0-007**: Crear Firebase + integrar `google-services.json` local.
-3. **TQ-F1.2-001**: Versionar SQL de `profiles` en carpeta `supabase/`.
-4. **TQ-F1.2-002**: Implementar cliente Supabase en Android.
-5. **TQ-F1.2-003/004/005/006**: Login real + sesión + roles + protección.
-6. **TQ-F1.6-001..006**: Integración FCM completa con token y refresh.
-7. **TQ-F1.6-007/008**: Edge Function para push y disparo por evento.
+- Registro app Android en Firebase.
+- `google-services.json` local en `app/`.
+- Integrar FCM token y refresh.
+- Push por evento desde backend.
 
 ---
 
-## 6) Checklist rápido de validación
+## Checklist operativo (para marcar)
 
-- [ ] Android compila localmente.
-- [ ] Supabase URL/anon key configuradas localmente.
-- [ ] Firebase integrado con `google-services.json` local.
-- [ ] Login real funciona con usuario de prueba.
-- [ ] Rol redirige a pantalla correcta.
-- [ ] Token FCM se guarda en `device_tokens`.
-- [ ] Evento creado dispara push al rol correcto.
+### Bloque A — Supabase
+
+- [ ] Crear proyecto Supabase
+- [ ] Copiar `SUPABASE_URL`
+- [ ] Copiar `SUPABASE_ANON_KEY`
+- [ ] Activar Email/Password
+- [ ] Desactivar confirm email temporalmente
+- [ ] Ejecutar `001_initial_schema.sql`
+- [ ] Ejecutar `002_seed_initial_data.sql`
+- [ ] Ejecutar `003_rls_policies.sql`
+- [ ] Crear `user@test.com`
+- [ ] Crear `notifier@test.com`
+- [ ] Crear `admin@test.com`
+- [ ] Insertar `profiles` con roles
+- [ ] Confirmar 6 cruces seed en `crossings`
+
+### Bloque B — Android + Auth
+
+- [ ] Configurar `SUPABASE_URL` en local
+- [ ] Configurar `SUPABASE_ANON_KEY` en local
+- [ ] Implementar cliente Supabase Android
+- [ ] Login email/password funcionando
+- [ ] Redirección por rol funcionando
+- [ ] Restricción de pantallas por rol funcionando
+
+### Bloque C — Firebase/FCM (después)
+
+- [ ] Crear proyecto Firebase
+- [ ] Registrar app Android con package correcto
+- [ ] Agregar `app/google-services.json` local
+- [ ] Obtener token FCM
+- [ ] Guardar token en `device_tokens`
+- [ ] Implementar refresh de token
+- [ ] Envío de push por evento
+
+---
+
+## Lo que necesito de ti antes de seguir (sin inventar)
+
+Comparte estos datos cuando los tengas para avanzar con código real:
+
+1. `SUPABASE_URL` (puedes ocultar parte si prefieres).
+2. Confirmación de que `SUPABASE_ANON_KEY` ya está en tu `local.properties`.
+3. Confirmación de que ejecutaste migraciones `001/002/003` en Supabase.
+4. Confirmación de creación de usuarios de prueba (`user`, `notifier`, `admin`).
+5. Package final Android a usar en Firebase (`com.tequit` u otro exacto).
+
+Con eso, el siguiente ticket implementable en repo es: **TQ-F1.2-002 (cliente Supabase Android)**.

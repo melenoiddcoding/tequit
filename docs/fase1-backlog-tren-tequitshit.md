@@ -301,6 +301,21 @@ alternate_routes
 
 ---
 
+
+## Orden real de ejecución (acordado)
+
+1. Supabase project
+2. SQL de tablas
+3. RLS básico
+4. Usuarios de prueba
+5. Conectar Android con Supabase
+6. Login + roles
+7. Firebase/FCM
+8. Token FCM
+9. Push por evento
+
+---
+
 ## Checklist final de cierre Fase 1
 
 - [ ] Repo conectado a Codex Cloud
